@@ -1,0 +1,4 @@
+todo:
+- upload folder with files
+- fix double upload ( CREATE and CLOSE_WRITE events)
+- fetch data tree from GDrive
