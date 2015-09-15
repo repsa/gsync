@@ -11,7 +11,7 @@ from oauth2client import client
 from oauth2client import tools
 import pprint
 
-DRIVE_FOLDER = '/home/sergey/gdrive'
+GDRIVE_FOLDER = 'gdrive'
 
 try:
     import argparse
@@ -78,7 +78,7 @@ def get_credentials():
     """
 
     credential_dir = os.path.dirname(os.path.realpath(__file__))
-    credential_path = os.path.join(credential_dir, 'drive-quickstart.json')
+    credential_path = os.path.join(credential_dir, 'credentials.json')
     store = oauth2client.file.Storage(credential_path)
     credentials = store.get()
     if not credentials or credentials.invalid:
@@ -90,23 +90,6 @@ def get_credentials():
             credentials = tools.run(flow, store)
         print 'Storing credentials to ' + credential_path
     return credentials
-
-
-def print_file_metadata(service, file_id):
-    """Print a filep's metadata.
-
-    Args:
-      service: Drive API service instance.
-      file_id: ID of the file to print metadata for.
-    """
-    try:
-        file = service.files().get(fileId=file_id).execute()
-
-        print 'Title: %s' % file['title']
-        print 'MIME type: %s' % file['mimeType']
-    except errors.HttpError, error:
-        print 'An error occurred: %s' % error
-
 
 def download_file(service, file_id, local_fd):
     """Download a Drive file's content to the local filesystem.
@@ -209,46 +192,6 @@ def get_file_id(service, name):
     return None
 
 
-def retrieve_all_files(service):
-    """Retrieve a list of File resources.
-
-    Args:
-      service: Drive API service instance.
-    Returns:
-      List of File resources.
-    """
-    result = []
-    page_token = None
-    while True:
-        try:
-            param = {}
-            if page_token:
-                param['pageToken'] = page_token
-            files = service.files().list(**param).execute()
-
-            result.extend(files['items'])
-            page_token = files.get('nextPageToken')
-            if not page_token:
-                break
-        except errors.HttpError, error:
-            print 'An error occurred: %s' % error
-            break
-    return result
-
-
-def filelist():
-    service = get_drive_service();
-    files = retrieve_all_files(service);
-    filelist = open('files/filelist.txt', 'w')
-    filelist.seek(0)
-    filelist.truncate()
-    for item in files:
-        # filelist.write(item['title'].encode('utf8') + '\n')
-        pprint.pprint(item)
-        print '-/-' * 38
-    filelist.close
-
-
 def watch():
     wm = pyinotify.WatchManager()
 
@@ -256,23 +199,14 @@ def watch():
 
     handler = EventHandler()
     notifier = pyinotify.Notifier(wm, handler)
-    wdd = wm.add_watch(DRIVE_FOLDER, mask, rec=True)
+    user_home_folder = os.path.join(os.path.expanduser('~'), GDRIVE_FOLDER) 
+    wdd = wm.add_watch(user_home_folder, mask, rec=True)
     notifier.loop()
-
-
-def print_dir_tree(rootDir):
-    for dirName, subdirList, fileList in os.walk(rootDir):
-        print('dirPath: %s, dirName: %s' % (dirName, dirName.split(os.path.sep)[-1]))
-        for fname in fileList:
-            path = os.path.join(dirName, fname)
-            print('\t%s' % path)
 
 
 def main():
     watch()
-    # rootDir = './files'
-    # print_dir_tree(rootDir)
-    # filelist()
+
 
 if __name__ == '__main__':
     main()
